@@ -21,6 +21,9 @@ from pyspark.sql import Window
 from pyspark.sql import functions as F
 from pyspark.sql.types import DateType, DoubleType, LongType, StringType
 
+# Fix compatibilità pyarrow timestamp
+import pyarrow as pa
+
 # ── Init Glue + Spark ─────────────────────────────────────────────────────────
 args = getResolvedOptions(sys.argv, ["JOB_NAME", "S3_BUCKET"])
 sc = SparkContext()
@@ -36,7 +39,12 @@ STAGING_PATH = f"s3://{S3_BUCKET}/staging/"
 # ── 1. LETTURA dati raw ───────────────────────────────────────────────────────
 print(">>> [1/7] Reading raw data from S3...")
 
-df = spark.read.parquet(RAW_PATH)
+df = spark.read \
+          .option("mergeSchema", "true") \
+          .option("spark.sql.parquet.int96RebaseModeInRead", "CORRECTED") \
+          .option("spark.sql.parquet.datetimeRebaseModeInRead", "CORRECTED") \
+          .option("basePath", RAW_PATH) \
+          .parquet(RAW_PATH)
 
 print(f"    Raw rows loaded: {df.count()}")
 print(f"    Schema:")
@@ -71,20 +79,10 @@ rows_after = df.count()
 print(f"    Duplicates removed: {rows_before - rows_after}")
 
 
-# ── 4. MISSING VALUES ─────────────────────────────────────────────────────────
-# I mercati europei hanno festività diverse da quelli USA
-# → forward-fill: se manca un giorno, usa il valore del giorno precedente
+# ── 4. MISSING VALUES ────────────────────────────────────────────────────────
+# Semplificato: forward-fill diretto senza cross join
 print(">>> [4/7] Handling missing values...")
 
-# Crea una griglia completa date × ticker
-all_dates = df.select("date").distinct()
-all_tickers = df.select("ticker", "etf_name").distinct()
-full_grid = all_dates.crossJoin(all_tickers)
-
-# Left join per trovare i giorni mancanti
-df = full_grid.join(df, on=["date", "ticker"], how="left")
-
-# Window per forward-fill ordinato per ticker e data
 window_ffill = (
     Window
     .partitionBy("ticker")
@@ -98,9 +96,7 @@ for col_name in ["open", "high", "low", "close", "volume"]:
         F.last(F.col(col_name), ignorenulls=True).over(window_ffill)
     )
 
-# Rimuovi righe ancora nulle (es. ticker con storico più corto)
 df = df.dropna(subset=["close"])
-
 print(f"    Rows after fill: {df.count()}")
 
 
