@@ -19,52 +19,60 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 # ── Config ────────────────────────────────────────────────────────────────────
-S3_BUCKET = "etf-analytics-pipeline-2025"   # <-- cambia col tuo bucket name
+S3_BUCKET = "etf-analytics-pipeline-voschion"   # <-- cambia col tuo bucket name
 RAW_PREFIX = "raw"
 
 # ETF principali: Mercati Emergenti vs Mercati Sviluppati + 2 di confronto
 TICKERS = {
-    "EIMI.L": "iShares Core MSCI EM IMI",        # mercati emergenti
-    "SWRD.L": "SPDR MSCI World",                 # mercati sviluppati
-    "TLT":    "iShares 20+ Year Treasury Bond",  # confronto obbligazionario
-    "GLD":    "SPDR Gold Shares",                # confronto commodity
+    "SWRD.L": "SPDR MSCI World",
+    "SPY":    "SPDR S&P 500",
+    "QQQ":    "Invesco Nasdaq 100",
+    "EFA":    "iShares MSCI EAFE",
+    "VEUR.L": "Vanguard FTSE Developed Europe",
+    "EIMI.L": "iShares Core MSCI EM IMI",
+    "CSPX.L": "iShares Core S&P 500 UCITS",
+    "VFEM.L": "Vanguard FTSE Emerging Markets",
+    "TLT":    "iShares 20+ Year Treasury Bond",
+    "AGG":    "iShares Core US Aggregate Bond",
+    "HYG":    "iShares iBoxx High Yield",
+    "LQD":    "iShares Investment Grade Corp",
+    "GLD":    "SPDR Gold Shares",
+    "SLV":    "iShares Silver Trust",
+    "USO":    "United States Oil Fund",
+    "PDBC":   "Invesco Commodity Basket",
+    "XLK":    "Technology Select Sector SPDR",
+    "XLV":    "Health Care Select Sector SPDR",
+    "XLE":    "Energy Select Sector SPDR",
+    "ARKK":   "ARK Innovation ETF",
 }
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 def download_etf(ticker: str, start: str, end: str) -> pd.DataFrame:
-    """
-    Scarica i dati OHLCV per un singolo ticker.
-    Restituisce un DataFrame con colonna 'ticker' aggiunta.
-    """
     logger.info(f"Downloading {ticker} from {start} to {end}")
-    df = yf.download(
-        ticker,
-        start=start,
-        end=end,
+    
+    t = yf.Ticker(ticker)
+    df = t.history(
+        start="2024-01-01",
+        end=date.today().isoformat(),
         interval="1d",
-        auto_adjust=True,   # aggiusta prezzi per dividendi/split
-        progress=False,
+        auto_adjust=True,
+        actions=False
     )
-
+    
     if df.empty:
         logger.warning(f"No data returned for {ticker}")
         return pd.DataFrame()
 
-    # Appiattisce MultiIndex se presente (yfinance >= 0.2 lo genera)
-    if isinstance(df.columns, pd.MultiIndex):
-        df.columns = df.columns.get_level_values(0)
-
+    df.index = df.index.tz_localize(None)
     df = df.reset_index()
     df.columns = [c.lower().replace(" ", "_") for c in df.columns]
-
-    # Aggiunge metadati utili per il downstream
     df["ticker"] = ticker
     df["etf_name"] = TICKERS[ticker]
     df["ingestion_date"] = date.today().isoformat()
 
+    logger.info(f"Downloaded {len(df)} rows for {ticker}")
     return df
-
 
 def save_to_s3(df: pd.DataFrame, ticker: str, run_date: str) -> str:
     """
@@ -74,11 +82,13 @@ def save_to_s3(df: pd.DataFrame, ticker: str, run_date: str) -> str:
     """
     s3_client = boto3.client("s3")
 
-    path = f"{RAW_PREFIX}/ticker={ticker}/date={run_date}/data.parquet"
+    path = f"{RAW_PREFIX}/ticker={ticker}/data.parquet"
 
     # Serializza in memoria (Lambda non ha disco scrivibile tranne /tmp)
     buffer = io.BytesIO()
-    df.to_parquet(buffer, index=False, engine="pyarrow")
+    df.to_parquet(buffer, index=False, engine="pyarrow",
+              coerce_timestamps="ms",
+              allow_truncated_timestamps=True)
     buffer.seek(0)
 
     s3_client.put_object(
@@ -104,7 +114,7 @@ def lambda_handler(event, context):
 
     # Scarica 5 giorni indietro per essere sicuri di non perdere dati
     # (mercati chiusi nei weekend → yfinance restituisce solo giorni di trading)
-    start = (today - timedelta(days=5)).isoformat()
+    start = (today - timedelta(days=730)).isoformat()
     end = run_date
 
     results = {
@@ -136,4 +146,4 @@ def lambda_handler(event, context):
     return {
         "statusCode": status_code,
         "body": json.dumps(results),
-    }
+    } 
