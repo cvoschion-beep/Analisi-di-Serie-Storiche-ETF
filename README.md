@@ -1,10 +1,10 @@
 # ETF Analytics Pipeline
 
-Progetto sviluppato nell'ambito del Master in Business Intelligence & Big Data Analytics dell'Università degli Studi di Milano-Bicocca, modulo **Big Data Analytics — Modern Architectures**.
+Progetto sviluppato nell'ambito del Master in Artificial Intelligence & Data Analytics for Business dell'Università degli Studi di Milano-Bicocca, modulo **Big Data Processing and Data Engineering**.
 
 ## Descrizione
 
-Pipeline Big Data end-to-end su AWS per l'analisi statistica di serie storiche di ETF. Il sistema raccoglie automaticamente ogni giorno i dati di 20 ETF su 5 categorie diverse (Equity Sviluppati, Equity Emergenti, Obbligazionario, Commodity, Settoriale), li trasforma garantendo qualità dei dati, e produce analisi statistiche visualizzate tramite dashboard Power BI.
+Sistema automatizzato su AWS per l'analisi statistica di serie storiche di ETF. Il sistema raccoglie, raccoglie, trasforma e analizza dati storici di 20 ETF su 5 categorie (Equity Sviluppati, Equity Emergenti, Obbligazionario, Commodity, Settoriale), producendo analisi statistiche accessibili via dashboard Power BI.
 
 L'obiettivo non è l'analisi finanziaria tradizionale, ma l'applicazione di strumenti statistici (Z-score, volatilità rolling, normalizzazione, anomaly detection) su serie temporali finanziarie — senza richiedere competenze di dominio finanziario.
 
@@ -23,13 +23,13 @@ S3 /raw/          → Source Tables (Parquet)
 AWS Glue Job 1    → S3 /staging/ (Data Quality)
       │
       ▼
-AWS Glue Job 2    → S3 /warehouse/ (Feature Engineering)
+AWS Glue Job 2    → S3 /warehouse/
       │
       ▼
 AWS Athena        → Query Layer (SQL + Views)
       │
       ▼
-Power BI          → Dashboard (4 pagine analitiche)
+Power BI          → Dashboard (5 pagine analitiche)
 ```
 
 ## Dataset
@@ -45,7 +45,7 @@ Power BI          → Dashboard (4 pagine analitiche)
 - **Fonte:** Yahoo Finance via `yfinance`
 - **Periodo:** 2024-01-02 → oggi
 - **Cardinalità:** ~13.300 righe totali (~665 giorni × 20 ETF)
-- **Formato storage:** Parquet (compressione ~5× vs CSV)
+- **Formato storage:** Parquet (più leggero del CSV)
 
 ## Domande di analisi
 
@@ -59,14 +59,14 @@ Power BI          → Dashboard (4 pagine analitiche)
 
 | Layer | Tecnologia | Ruolo |
 |-------|-----------|-------|
-| Scraping | Python + yfinance | Estrazione dati da Yahoo Finance |
-| Orchestrazione | AWS EventBridge | Trigger giornaliero automatico |
-| Compute | AWS Lambda | Esecuzione scraping serverless |
-| Storage | AWS S3 | Data Lake con 3 zone separate |
-| ETL | AWS Glue (PySpark) | Trasformazione e feature engineering |
+| Scraping | Python + yfinance | Scarica i dati storici degli ETF da Yahoo Finance |
+| Schedulazione | AWS EventBridge | Avvia la pipeline automaticamente ogni giorno alle 21:00 UTC |
+| Esecuzione | AWS Lambda | Esegue lo scraping senza server dedicati |
+| Storage | AWS S3 | Salva i dati in tre livelli (raw, staging, warehouse) in formato Parquet |
+| ETL | AWS Glue (PySpark) | Pulisce, trasforma e arricchisce i dati |
 | Catalogazione | AWS Glue Catalog | Metadati e schema tabelle |
-| Query | AWS Athena | SQL serverless su S3 |
-| Visualization | Power BI | Dashboard interattiva |
+| Query | AWS Athena | Interroga i dati con SQL direttamente su S3 |
+| Visualization | Power BI | Dashboard con 5 pagine di analisi interattive per categoria |
 
 ## Struttura del repository
 
@@ -101,4 +101,4 @@ etf-analytics-pipeline/
 
 ## Autore
 
-Progetto individuale — Master BI & Big Data Analytics, Università degli Studi di Milano-Bicocca
+Progetto individuale — Master AI & Data Analytics for Business, Università degli Studi di Milano-Bicocca
