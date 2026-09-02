@@ -54,10 +54,26 @@ print(">>> [1/4] Building dim_etf...")
 
 # Mappa arricchita con info che yfinance non fornisce
 etf_metadata = spark.createDataFrame([
-    ("EIMI.L", "iShares Core MSCI EM IMI UCITS ETF",  "BlackRock",   "Equity", "MSCI EM IMI", "USD", "LSE"),
-    ("SWRD.L", "SPDR MSCI World UCITS ETF",           "State Street","Equity", "MSCI World",  "USD", "LSE"),
-    ("TLT",    "iShares 20+ Year Treasury Bond ETF",  "BlackRock",   "Bond",   "ICE US Treasury 20+ Year", "USD", "NYSE"),
-    ("GLD",    "SPDR Gold Shares",                    "State Street","Commodity","Gold Spot", "USD", "NYSE"),
+    ("SWRD.L", "SPDR MSCI World UCITS ETF",                  "State Street", "Equity Sviluppati", "MSCI World",          "USD", "LSE"),
+    ("SPY",    "SPDR S&P 500 ETF Trust",                     "State Street", "Equity Sviluppati", "S&P 500",             "USD", "NYSE"),
+    ("QQQ",    "Invesco Nasdaq 100 ETF",                      "Invesco",      "Equity Sviluppati", "Nasdaq 100",          "USD", "NYSE"),
+    ("EFA",    "iShares MSCI EAFE ETF",                       "BlackRock",    "Equity Sviluppati", "MSCI EAFE",           "USD", "NYSE"),
+    ("VEUR.L", "Vanguard FTSE Developed Europe UCITS ETF",    "Vanguard",     "Equity Sviluppati", "FTSE Developed Europe","USD","LSE"),
+    ("CSPX.L", "iShares Core S&P 500 UCITS ETF",             "BlackRock",    "Equity Sviluppati", "S&P 500",             "USD", "LSE"),
+    ("EIMI.L", "iShares Core MSCI EM IMI UCITS ETF",         "BlackRock",    "Equity Emergenti",  "MSCI EM IMI",         "USD", "LSE"),
+    ("VFEM.L", "Vanguard FTSE Emerging Markets UCITS ETF",   "Vanguard",     "Equity Emergenti",  "FTSE Emerging Markets","USD","LSE"),
+    ("TLT",    "iShares 20+ Year Treasury Bond ETF",         "BlackRock",    "Obbligazionario",   "ICE US Treasury 20+", "USD", "NYSE"),
+    ("AGG",    "iShares Core US Aggregate Bond ETF",         "BlackRock",    "Obbligazionario",   "Bloomberg US Agg",    "USD", "NYSE"),
+    ("HYG",    "iShares iBoxx High Yield Corporate Bond ETF","BlackRock",    "Obbligazionario",   "iBoxx USD Liquid HY", "USD", "NYSE"),
+    ("LQD",    "iShares Investment Grade Corporate Bond ETF","BlackRock",    "Obbligazionario",   "iBoxx USD IG Corp",   "USD", "NYSE"),
+    ("GLD",    "SPDR Gold Shares",                           "State Street", "Commodity",         "Gold Spot",           "USD", "NYSE"),
+    ("SLV",    "iShares Silver Trust",                       "BlackRock",    "Commodity",         "Silver Spot",         "USD", "NYSE"),
+    ("USO",    "United States Oil Fund",                     "USCF",         "Commodity",         "WTI Crude Oil",       "USD", "NYSE"),
+    ("PDBC",   "Invesco Optimum Yield Diversified Commodity","Invesco",      "Commodity",         "DBIQ Commodity Index","USD", "NYSE"),
+    ("XLK",    "Technology Select Sector SPDR Fund",         "State Street", "Settoriale",        "S&P Tech Sector",     "USD", "NYSE"),
+    ("XLV",    "Health Care Select Sector SPDR Fund",        "State Street", "Settoriale",        "S&P Health Sector",   "USD", "NYSE"),
+    ("XLE",    "Energy Select Sector SPDR Fund",             "State Street", "Settoriale",        "S&P Energy Sector",   "USD", "NYSE"),
+    ("ARKK",   "ARK Innovation ETF",                         "ARK Invest",   "Settoriale",        "ARK Innovation",      "USD", "NYSE"),
 ], ["ticker", "etf_name", "provider", "category", "index_tracked", "currency", "exchange"])
 
 # Aggiungi statistiche descrittive calcolate dai dati reali
