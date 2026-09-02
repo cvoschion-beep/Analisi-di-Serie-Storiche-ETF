@@ -2,19 +2,19 @@
 
 ## Panoramica
 
-Il sistema segue il pattern **Lambda Architecture** su AWS, con un Data Lake strutturato in tre zone separate su S3. L'intera pipeline è serverless — non ci sono server da gestire e il costo stimato è inferiore a 5$/mese per i volumi attuali.
+Il sistema segue il pattern **Lambda Architecture** su AWS, con un Data Lake strutturato in tre zone separate su S3 (/raw/, /staging/, /warehouse/).
 
 ## Flusso dei dati
 
 ### 1. Ingestion Layer — AWS Lambda
 
-Il Lambda viene triggerato ogni giorno alle 21:00 UTC da **AWS EventBridge** (cron schedulato), dopo la chiusura dei mercati europei (LSE).
+Il Lambda viene lanciato ogni giorno alle 21:00 UTC da **AWS EventBridge** (cron schedulato), dopo la chiusura dei mercati europei (LSE).
 
 Per ogni ticker nel dizionario `TICKERS`:
 - Chiama `yfinance.Ticker.history()` con `start='2024-01-01'` e `actions=False`
 - Rimuove il timezone dal timestamp (`tz_localize(None)`)
 - Serializza il DataFrame in formato Parquet con `coerce_timestamps='ms'`
-- Salva su S3 nel path: `raw/ticker=EIMI.L/data.parquet`
+- Salva su S3 nel path: `raw/ticker=***/data.parquet`
 
 **Nota:** ogni run sovrascrive il file con lo storico completo aggiornato. La scelta di un path piatto (senza partizione per data) evita conflitti tra la struttura delle cartelle S3 e lo schema interno del file Parquet.
 
@@ -73,14 +73,15 @@ Sono definite 8 view SQL che alimentano Power BI:
 
 ### 5. Visualization Layer — Power BI
 
-Dashboard con 4 pagine analitiche, alimentata da CSV esportati da Athena:
+Dashboard con 5 pagine analitiche, alimentata da CSV esportati da Athena:
 
 - **Overview** — Trend 20 ETF normalizzati base 100 + slicer categoria
-- **Analisi per Categoria** — Performance e volatilità aggregate per categoria
+- **Analisi per Categoria** — Performance cumulativa e volatilità per categoria
 - **Risk vs Return** — Scatter plot efficienza ETF (volatilità vs rendimento)
-- **Anomaly Detection** — Distribuzione e dettaglio dei giorni anomali
+- **Anomaly Detection** — Distribuzione e dettaglio dei giorni anomali per categoria
+- **Distribuzione dei Rendimenti** — Istogramma dei rendimenti giornalieri per categoria
 
-## Orchestrazione
+## Schedulazione
 
 Il **Glue Workflow** (`etf-daily-pipeline`) coordina la sequenza:
 
@@ -100,7 +101,6 @@ Glue Job 2 (staging → warehouse)
 Glue Crawler (aggiorna catalogo Athena)
 ```
 
-**Nota su AWS Academy:** l'ambiente accademico non mantiene i trigger schedulati attivi quando la sessione Lab è chiusa. In produzione si utilizzerebbe un account AWS dedicato o un orchestratore managed (Airflow, Prefect).
 
 ## Schema del Data Warehouse
 
