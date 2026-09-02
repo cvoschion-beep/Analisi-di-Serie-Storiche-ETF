@@ -1,5 +1,5 @@
 -- ============================================================================
--- ETF Analytics Pipeline — Athena Queries v2 (20 ETF)
+-- ETF Analytics Pipeline — Athena Queries (20 ETF)
 -- Database: etf_analytics_db
 -- ============================================================================
 
@@ -17,13 +17,12 @@ ORDER BY ticker;
 
 
 -- ============================================================================
--- SEZIONE 2 — VIEWS AGGIORNATE
--- Ricrea le view esistenti + aggiungi le nuove per categoria
+-- SEZIONE 2 — VIEWS
 -- ============================================================================
 
 
 -- ----------------------------------------------------------------------------
--- VIEW 1: v_prices_normalized (aggiornata — ora include 20 ETF)
+-- VIEW 1: v_prices_normalized
 -- ----------------------------------------------------------------------------
 CREATE OR REPLACE VIEW etf_analytics_db.v_prices_normalized AS
 SELECT
@@ -110,9 +109,9 @@ ORDER BY total_return_pct DESC;
 
 
 -- ----------------------------------------------------------------------------
--- VIEW 5: v_correlation_matrix (aggiornata — pivot su 20 ETF)
--- Nota: per 20 ETF il pivot manuale è troppo lungo
--- Usa questa view per calcolare correlazioni a coppie in Power BI
+-- VIEW 5: v_returns_daily
+-- Rendimenti giornalieri per tutti gli ETF — usata per analisi distribuzione
+-- e per calcolare correlazioni in Power BI
 -- ----------------------------------------------------------------------------
 CREATE OR REPLACE VIEW etf_analytics_db.v_returns_daily AS
 SELECT
@@ -127,7 +126,7 @@ ORDER BY date, ticker;
 
 
 -- ----------------------------------------------------------------------------
--- VIEW 6: v_volatility_heatmap (aggiornata)
+-- VIEW 6: v_volatility_heatmap
 -- ----------------------------------------------------------------------------
 CREATE OR REPLACE VIEW etf_analytics_db.v_volatility_heatmap AS
 SELECT
@@ -149,7 +148,7 @@ ORDER BY r.ticker, year_month;
 
 
 -- ----------------------------------------------------------------------------
--- VIEW 7: v_drawdown_analysis (aggiornata)
+-- VIEW 7: v_drawdown_analysis
 -- ----------------------------------------------------------------------------
 CREATE OR REPLACE VIEW etf_analytics_db.v_drawdown_analysis AS
 SELECT
@@ -173,7 +172,7 @@ ORDER BY r.ticker, r.date;
 
 
 -- ----------------------------------------------------------------------------
--- VIEW 8: v_anomalies_detail (aggiornata)
+-- VIEW 8: v_anomalies_detail
 -- ----------------------------------------------------------------------------
 CREATE OR REPLACE VIEW etf_analytics_db.v_anomalies_detail AS
 SELECT
